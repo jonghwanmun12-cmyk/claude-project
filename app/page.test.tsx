@@ -214,6 +214,84 @@ test("체크리스트 항목을 체크하면 재렌더링해도 유지된다", (
   expect(screen.getByLabelText(/여행자 보험/)).not.toBeChecked();
 });
 
+test("위치 권한을 허용하고 GPS가 큐레이션 도시와 가까우면 그 도시의 맛집·관광지가 보인다", () => {
+  vi.stubGlobal("navigator", {
+    ...navigator,
+    geolocation: {
+      getCurrentPosition: (success: PositionCallback) => {
+        success({
+          coords: { latitude: 45.4642, longitude: 9.19 }, // 밀란 좌표
+        } as GeolocationPosition);
+      },
+    },
+  });
+
+  render(<Home />);
+
+  const nearby = screen.getByRole("region", { name: "내 위치 주변 정보" });
+  expect(nearby).toBeInTheDocument();
+  expect(screen.getByText("밀라노 두오모")).toBeInTheDocument();
+  expect(screen.getByLabelText("도시 선택")).toHaveValue("milan");
+
+  vi.unstubAllGlobals();
+});
+
+test("GPS가 이탈리아 큐레이션 도시들과 멀면 도착 도시 기준으로 목록이 보인다", () => {
+  vi.stubGlobal("navigator", {
+    ...navigator,
+    geolocation: {
+      getCurrentPosition: (success: PositionCallback) => {
+        success({
+          coords: { latitude: 37.5665, longitude: 126.978 }, // 서울 좌표
+        } as GeolocationPosition);
+      },
+    },
+  });
+
+  render(<Home />);
+
+  // 도착 도시 기본값(로마) 기준으로 표시된다.
+  expect(screen.getByText("콜로세움")).toBeInTheDocument();
+  expect(screen.getByLabelText("도시 선택")).toHaveValue("rome");
+  expect(
+    screen.getByText("현재 위치가 큐레이션 도시들과 멀리 떨어져 있어, 도착 도시 기준으로 보여줍니다.")
+  ).toBeInTheDocument();
+
+  vi.unstubAllGlobals();
+});
+
+test("위치 권한을 거부해도 도시를 직접 선택해 맛집·관광지 목록을 볼 수 있다", () => {
+  vi.stubGlobal("navigator", {
+    ...navigator,
+    geolocation: {
+      getCurrentPosition: (_success: PositionCallback, error: PositionErrorCallback) => {
+        error({ code: 1, PERMISSION_DENIED: 1, POSITION_UNAVAILABLE: 2, TIMEOUT: 3 } as GeolocationPositionError);
+      },
+    },
+  });
+
+  render(<Home />);
+
+  expect(
+    screen.getByText("위치 권한이 거부되어, 도시를 직접 선택해 볼 수 있습니다.")
+  ).toBeInTheDocument();
+
+  fireEvent.change(screen.getByLabelText("도시 선택"), { target: { value: "venice" } });
+  expect(screen.getByText("산 마르코 광장")).toBeInTheDocument();
+
+  vi.unstubAllGlobals();
+});
+
+test("맛집·관광지 이미지가 깨지면 항목은 남고 대체 표시가 나온다", () => {
+  render(<Home />); // navigator.geolocation 없음 → 미지원으로 폴백, 로마 기준 표시
+
+  const colosseumImage = screen.getByAltText("콜로세움");
+  fireEvent.error(colosseumImage);
+
+  expect(screen.getByText("콜로세움")).toBeInTheDocument();
+  expect(screen.getByLabelText("콜로세움 이미지 없음")).toBeInTheDocument();
+});
+
 test("예산 트래커에 금액을 입력하면 합계가 즉시 갱신되고 재렌더링해도 유지된다", () => {
   const { unmount } = render(<Home />);
 
