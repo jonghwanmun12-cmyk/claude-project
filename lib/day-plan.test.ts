@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildDayPlan } from "@/lib/day-plan";
+import { buildDayPlan, computeDayStayPositions } from "@/lib/day-plan";
 import type { RoutePlan } from "@/lib/route-planner";
 
 function plan(cityIds: string[]): RoutePlan {
@@ -42,5 +42,33 @@ describe("buildDayPlan", () => {
 
     expect(days.map((d) => d.date)).toEqual(["2026-09-10", "2026-09-11", "2026-09-12", "2026-09-13"]);
     expect(days.every((d) => d.cityId === "milan")).toBe(true);
+  });
+});
+
+describe("computeDayStayPositions", () => {
+  it("같은 도시가 연속되는 구간을 하나의 체류로 묶어 순번을 매긴다", () => {
+    const days = buildDayPlan(plan(["rome", "florence", "venice"]), "2026-09-10T14:00", "2026-09-16T09:00");
+    const positions = computeDayStayPositions(days);
+
+    // rome: 2일(9/10,9/11), florence: 2일, venice: 3일(9/14,9/15,9/16 출발일 포함)
+    expect(positions[0]).toEqual({ dayIndexInStay: 0, totalDaysInStay: 2 });
+    expect(positions[1]).toEqual({ dayIndexInStay: 1, totalDaysInStay: 2 });
+    expect(positions[2]).toEqual({ dayIndexInStay: 0, totalDaysInStay: 2 });
+    expect(positions[3]).toEqual({ dayIndexInStay: 1, totalDaysInStay: 2 });
+    expect(positions[4]).toEqual({ dayIndexInStay: 0, totalDaysInStay: 3 });
+    expect(positions[5]).toEqual({ dayIndexInStay: 1, totalDaysInStay: 3 });
+    expect(positions[6]).toEqual({ dayIndexInStay: 2, totalDaysInStay: 3 });
+  });
+
+  it("도시가 하나뿐이면 전체가 하나의 체류 구간이다", () => {
+    const days = buildDayPlan(plan(["milan"]), "2026-09-10T14:00", "2026-09-13T09:00");
+    const positions = computeDayStayPositions(days);
+
+    expect(positions).toEqual([
+      { dayIndexInStay: 0, totalDaysInStay: 4 },
+      { dayIndexInStay: 1, totalDaysInStay: 4 },
+      { dayIndexInStay: 2, totalDaysInStay: 4 },
+      { dayIndexInStay: 3, totalDaysInStay: 4 },
+    ]);
   });
 });

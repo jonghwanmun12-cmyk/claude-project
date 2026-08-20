@@ -29,6 +29,8 @@ export const CITIES: City[] = [
   { id: "pisa", name: "피사", nameEn: "Pisa", priority: 3, lat: 43.7228, lng: 10.4017 },
   { id: "turin", name: "토리노", nameEn: "Turin", priority: 2, lat: 45.0703, lng: 7.6869 },
   { id: "genoa", name: "제노바", nameEn: "Genoa", priority: 2, lat: 44.4056, lng: 8.9463 },
+  { id: "dolomites", name: "돌로미티(코르티나 담페초)", nameEn: "Dolomites (Cortina d'Ampezzo)", priority: 2, lat: 46.5405, lng: 12.1357 },
+  { id: "amalfi", name: "아말피 해안", nameEn: "Amalfi Coast", priority: 3, lat: 40.634, lng: 14.6027 },
 ];
 
 const CITY_BY_ID = new Map(CITIES.map((city) => [city.id, city]));
@@ -96,6 +98,30 @@ const TRAVEL_HOURS_ENTRIES: Array<[string, string, number]> = [
   ["genoa", "verona", 3],
   ["genoa", "pisa", 1.3],
   ["verona", "pisa", 2.5],
+  // 돌로미티(코르티나 담페초)는 직통 열차가 없어 기차+버스 환승을 포함한
+  // 대략적인 총 소요 시간이다.
+  ["dolomites", "rome", 6.5],
+  ["dolomites", "florence", 5.5],
+  ["dolomites", "venice", 2.5],
+  ["dolomites", "milan", 5],
+  ["dolomites", "naples", 8.5],
+  ["dolomites", "bologna", 4],
+  ["dolomites", "verona", 2.5],
+  ["dolomites", "pisa", 6],
+  ["dolomites", "turin", 6.5],
+  ["dolomites", "genoa", 6.5],
+  // 아말피 해안은 나폴리에서 버스·페리로 갈아타는 시간을 포함한 대략치다.
+  ["amalfi", "rome", 3.5],
+  ["amalfi", "florence", 5],
+  ["amalfi", "venice", 7.5],
+  ["amalfi", "milan", 7],
+  ["amalfi", "naples", 1.5],
+  ["amalfi", "bologna", 6],
+  ["amalfi", "verona", 6.5],
+  ["amalfi", "pisa", 5.5],
+  ["amalfi", "turin", 8],
+  ["amalfi", "genoa", 7.5],
+  ["amalfi", "dolomites", 9],
 ];
 
 const TRAVEL_HOURS: Record<string, number> = Object.fromEntries(

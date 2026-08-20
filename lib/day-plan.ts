@@ -41,3 +41,31 @@ export function buildDayPlan(
 
   return days;
 }
+
+export type DayStayPosition = {
+  /** 같은 도시에 머무는 구간 안에서 이 날이 몇 번째인지(0부터 시작). */
+  dayIndexInStay: number;
+  /** 같은 도시에 머무는 구간의 총 일수. */
+  totalDaysInStay: number;
+};
+
+/**
+ * 일자별 일정에서 같은 도시가 연속으로 이어지는 구간(체류 구간)을 찾아, 각
+ * 날짜가 그 구간의 몇 번째 날인지 계산한다. Day 카드가 같은 도시에 여러 날
+ * 머물 때 서로 다른 관광지·맛집 후보를 보여주는 데 쓴다
+ * (lib/nearby-places-data.ts의 getDayHighlights와 함께 사용).
+ */
+export function computeDayStayPositions(days: DayPlanEntry[]): DayStayPosition[] {
+  const positions: DayStayPosition[] = new Array(days.length);
+  let start = 0;
+  while (start < days.length) {
+    let end = start;
+    while (end < days.length && days[end].cityId === days[start].cityId) end++;
+    const total = end - start;
+    for (let i = start; i < end; i++) {
+      positions[i] = { dayIndexInStay: i - start, totalDaysInStay: total };
+    }
+    start = end;
+  }
+  return positions;
+}
