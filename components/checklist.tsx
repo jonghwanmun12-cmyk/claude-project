@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ListChecks } from "lucide-react";
 
+import { SectionHeading } from "@/components/ui/section-heading";
 import { CHECKLIST_ITEMS } from "@/lib/checklist-data";
 import { loadChecklist, saveChecklist } from "@/lib/checklist-storage";
 
@@ -31,9 +33,9 @@ export function Checklist() {
   return (
     <section
       aria-label="여행 준비 체크리스트"
-      className="flex w-full max-w-2xl flex-col gap-4 rounded-xl border border-border bg-card p-6"
+      className="flex w-full max-w-2xl flex-col gap-4 rounded-2xl border border-border bg-card p-6 shadow-sm"
     >
-      <h2 className="text-lg font-semibold text-foreground">여행 준비 체크리스트</h2>
+      <SectionHeading icon={ListChecks} title="여행 준비 체크리스트" description="출국 전 놓치기 쉬운 항목을 확인하세요" />
       <ul className="flex flex-col gap-2">
         {CHECKLIST_ITEMS.map((item) => (
           <li key={item.id}>

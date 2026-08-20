@@ -2,9 +2,15 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import { Map, Route, CalendarRange } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
+import { SectionHeading } from "@/components/ui/section-heading";
+import { ItalyMap } from "@/components/italy-map";
+import { PlaceCard } from "@/components/place-card";
 import { buildHotelSearchUrl, TRAIN_BOOKING_HOMEPAGE_URL } from "@/lib/booking-links";
-import { buildDayPlan } from "@/lib/day-plan";
+import { buildDayPlan, computeDayStayPositions } from "@/lib/day-plan";
+import { getDayHighlights } from "@/lib/nearby-places-data";
 import { downloadBlob } from "@/lib/download-file";
 import { buildIcsContent } from "@/lib/ics-export";
 import { buildItinerary } from "@/lib/itinerary";
@@ -14,11 +20,13 @@ import { CITIES, getCity } from "@/lib/travel-data";
 import { computeNights, computeRoute, MAX_VIA_CITIES, type RoutePlan } from "@/lib/route-planner";
 import { loadTrip, saveTrip, type StoredTrip } from "@/lib/trip-storage";
 
+// 사용자가 지정한 로마 왕복 기본 일정. 저장된 일정이나 공유 링크가 없는
+// 첫 방문 시 미리 채워지며, 계속 자유롭게 수정할 수 있다.
 const DEFAULT_ARRIVAL: StoredTrip = {
   arrivalCityId: "rome",
-  arrivalDateTime: "",
-  departureCityId: "venice",
-  departureDateTime: "",
+  arrivalDateTime: "2027-05-23T19:00",
+  departureCityId: "rome",
+  departureDateTime: "2027-05-30T21:00",
   mustVisitCityIds: [],
 };
 
@@ -112,6 +120,10 @@ export function TripPlanner() {
     [plan, trip.arrivalDateTime, trip.departureDateTime]
   );
 
+  // 같은 도시에 여러 날 머물 때 Day 카드마다 다른 관광지·맛집 후보를 보여주기
+  // 위한 위치 정보(그 체류 구간의 몇 번째 날인지).
+  const dayStayPositions = useMemo(() => computeDayStayPositions(dayPlan), [dayPlan]);
+
   function exportIcs() {
     const ics = buildIcsContent(dayPlan, (cityId) => getCity(cityId)?.name ?? cityId);
     downloadBlob(new Blob([ics], { type: "text/calendar;charset=utf-8" }), "italy-trip.ics");
@@ -143,9 +155,10 @@ export function TripPlanner() {
   return (
     <div className="flex w-full max-w-2xl flex-col gap-8">
       <form
-        className="flex flex-col gap-4 rounded-xl border border-border bg-card p-6"
+        className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-6 shadow-sm"
         onSubmit={(event) => event.preventDefault()}
       >
+        <SectionHeading icon={Route} title="여행 플래너" description="도착·출발 정보를 입력하면 추천 루트를 짜드려요" />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="flex flex-col gap-1.5">
             <label htmlFor="arrival-city" className="text-sm font-medium text-foreground">
@@ -251,6 +264,19 @@ export function TripPlanner() {
           )}
         </fieldset>
 
+        <div className="flex flex-col gap-1.5">
+          <span className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+            <Map className="h-4 w-4 text-primary" aria-hidden="true" />
+            지도에서 골라도 돼요
+          </span>
+          <ItalyMap
+            selectedCityIds={trip.mustVisitCityIds}
+            onToggleCity={toggleMustVisit}
+            fixedCityIds={[trip.arrivalCityId, trip.departureCityId]}
+            routeCityIds={plan?.cityIds}
+          />
+        </div>
+
         <Button type="submit" className="w-fit">
           루트 추천받기
         </Button>
@@ -263,8 +289,8 @@ export function TripPlanner() {
       )}
 
       {plan && (
-        <section aria-label="추천 루트" className="flex flex-col gap-4 rounded-xl border border-border bg-card p-6">
-          <h2 className="text-lg font-semibold text-foreground">추천 루트</h2>
+        <section aria-label="추천 루트" className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-6 shadow-sm">
+          <SectionHeading icon={Route} title="추천 루트" description="구간별 이동수단·숙소 검색 링크가 함께 제공돼요" />
           <ol className="flex flex-col gap-2">
             {plan.cityIds.map((cityId, index) => {
               const cityName = getCity(cityId)?.name ?? cityId;
@@ -311,9 +337,9 @@ export function TripPlanner() {
       )}
 
       {plan && dayPlan.length > 0 && (
-        <section aria-label="일자별 일정" className="flex flex-col gap-4 rounded-xl border border-border bg-card p-6">
+        <section aria-label="일자별 일정" className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-6 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-lg font-semibold text-foreground">일자별 일정</h2>
+            <SectionHeading icon={CalendarRange} title="일자별 일정" description="Day별 추천 관광지·맛집과 사진을 확인하세요" />
             <div className="flex gap-2">
               <Button type="button" variant="outline" size="sm" onClick={exportIcs}>
                 캘린더 내보내기 (.ics)
@@ -326,14 +352,28 @@ export function TripPlanner() {
               </Button>
             </div>
           </div>
-          <ol className="flex flex-col gap-1">
-            {dayPlan.map((day) => (
-              <li key={day.dayNumber} className="flex gap-2 text-sm text-foreground">
-                <span className="font-medium">Day {day.dayNumber}</span>
-                <span className="text-muted-foreground">{formatDateKorean(day.date)}</span>
-                <span>{getCity(day.cityId)?.name ?? day.cityId}</span>
-              </li>
-            ))}
+          <ol className="flex flex-col gap-4">
+            {dayPlan.map((day, index) => {
+              const cityName = getCity(day.cityId)?.name ?? day.cityId;
+              const { dayIndexInStay, totalDaysInStay } = dayStayPositions[index];
+              const highlights = getDayHighlights(day.cityId, dayIndexInStay, totalDaysInStay);
+              return (
+                <li key={day.dayNumber} className="flex flex-col gap-2 rounded-lg border border-border p-3">
+                  <div className="flex gap-2 text-sm text-foreground">
+                    <span className="font-medium">Day {day.dayNumber}</span>
+                    <span className="text-muted-foreground">{formatDateKorean(day.date)}</span>
+                    <span>{cityName}</span>
+                  </div>
+                  {highlights.length > 0 && (
+                    <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                      {highlights.map((place) => (
+                        <PlaceCard key={place.id} place={place} cityName={cityName} />
+                      ))}
+                    </ul>
+                  )}
+                </li>
+              );
+            })}
           </ol>
           {shareUrlRevealed && shareUrl && (
             <div className="flex flex-col gap-1.5">

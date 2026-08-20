@@ -2,9 +2,13 @@
 
 import { useEffect, useState } from "react";
 
+import { MapPinned } from "lucide-react";
+
+import { PlaceCard } from "@/components/place-card";
+import { SectionHeading } from "@/components/ui/section-heading";
 import { getNearbyPlaces } from "@/lib/nearby-places-data";
 import { resolveNearbyCityId } from "@/lib/nearest-city";
-import { CITIES } from "@/lib/travel-data";
+import { CITIES, getCity } from "@/lib/travel-data";
 import { loadTrip } from "@/lib/trip-storage";
 
 type GeoStatus =
@@ -32,7 +36,6 @@ function fallbackCityId(): string {
 export function NearbyPlaces() {
   const [status, setStatus] = useState<GeoStatus>("loading");
   const [cityId, setCityId] = useState<string | null>(null);
-  const [brokenImageIds, setBrokenImageIds] = useState<Set<string>>(new Set());
 
   // 서버에는 위치 정보/localStorage가 없어 마운트 이후에만 조회한다
   // (components/trip-planner.tsx와 같은 하이드레이션 회피 패턴).
@@ -68,13 +71,16 @@ export function NearbyPlaces() {
   }, []);
 
   const places = cityId ? getNearbyPlaces(cityId) : [];
+  const sights = places.filter((place) => place.category === "sight");
+  const foods = places.filter((place) => place.category === "food");
+  const cityName = cityId ? (getCity(cityId)?.name ?? cityId) : "";
 
   return (
     <section
       aria-label="내 위치 주변 정보"
-      className="flex w-full max-w-2xl flex-col gap-4 rounded-xl border border-border bg-card p-6"
+      className="flex w-full max-w-2xl flex-col gap-4 rounded-2xl border border-border bg-card p-6 shadow-sm"
     >
-      <h2 className="text-lg font-semibold text-foreground">내 위치 주변 정보</h2>
+      <SectionHeading icon={MapPinned} title="내 위치 주변 정보" description="가까운 도시의 관광지·맛집 후보를 확인하세요" />
       <p className="text-sm text-muted-foreground">{STATUS_MESSAGE[status]}</p>
 
       <div className="flex flex-col gap-1.5">
@@ -96,44 +102,28 @@ export function NearbyPlaces() {
       </div>
 
       {cityId && (
-        <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {places.map((place) => {
-            const imageBroken = brokenImageIds.has(place.id);
-            return (
-              <li key={place.id} className="flex flex-col gap-2 overflow-hidden rounded-lg border border-border">
-                {imageBroken ? (
-                  <div
-                    role="img"
-                    aria-label={`${place.name} 이미지 없음`}
-                    className="flex h-32 w-full items-center justify-center bg-muted text-xs text-muted-foreground"
-                  >
-                    이미지를 불러올 수 없습니다
-                  </div>
-                ) : (
-                  // eslint-disable-next-line @next/next/no-img-element -- 외부 Wikimedia Commons 이미지라 next/image 최적화 대상이 아니다.
-                  <img
-                    src={place.imageUrl}
-                    alt={place.name}
-                    className="h-32 w-full object-cover"
-                    onError={() =>
-                      setBrokenImageIds((prev) => {
-                        const next = new Set(prev);
-                        next.add(place.id);
-                        return next;
-                      })
-                    }
-                  />
-                )}
-                <div className="flex flex-col gap-0.5 px-3 pb-3">
-                  <span className="text-sm font-medium text-foreground">{place.name}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {place.category === "food" ? "맛집" : "관광지"}
-                  </span>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
+        <div className="flex flex-col gap-5">
+          {sights.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <h3 className="text-sm font-semibold text-foreground">관광지 후보</h3>
+              <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {sights.map((place) => (
+                  <PlaceCard key={place.id} place={place} cityName={cityName} />
+                ))}
+              </ul>
+            </div>
+          )}
+          {foods.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <h3 className="text-sm font-semibold text-foreground">맛집 후보</h3>
+              <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {foods.map((place) => (
+                  <PlaceCard key={place.id} place={place} cityName={cityName} />
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
       )}
     </section>
   );
