@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { Wallet } from "lucide-react";
 
+import { SectionHeading } from "@/components/ui/section-heading";
 import { BUDGET_CATEGORIES } from "@/lib/budget-data";
 import { loadBudget, saveBudget, type BudgetAmounts } from "@/lib/budget-storage";
 
@@ -45,9 +47,9 @@ export function BudgetTracker() {
   return (
     <section
       aria-label="예산 트래커"
-      className="flex w-full max-w-2xl flex-col gap-4 rounded-xl border border-border bg-card p-6"
+      className="flex w-full max-w-2xl flex-col gap-4 rounded-2xl border border-border bg-card p-6 shadow-sm"
     >
-      <h2 className="text-lg font-semibold text-foreground">예산 트래커</h2>
+      <SectionHeading icon={Wallet} title="예산 트래커" description="카테고리별 예상 비용을 입력해 합계를 확인하세요" />
       <div className="flex flex-col gap-3">
         {BUDGET_CATEGORIES.map((category) => (
           <div key={category.id} className="flex items-center justify-between gap-3">
@@ -66,7 +68,9 @@ export function BudgetTracker() {
           </div>
         ))}
       </div>
-      <p className="text-sm font-medium text-foreground">합계: {total.toLocaleString("ko-KR")}원</p>
+      <p className="rounded-lg bg-primary/5 px-3 py-2 text-sm font-medium text-foreground dark:bg-primary/10">
+        합계: {total.toLocaleString("ko-KR")}원
+      </p>
     </section>
   );
 }

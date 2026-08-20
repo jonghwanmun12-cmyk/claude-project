@@ -37,3 +37,4 @@ completed
 - Verification: `bun run test`(60개 통과, `lib/nearest-city.test.ts` + `app/page.test.tsx`의 GPS 근접/원거리/거부 3개 시나리오와 이미지 깨짐 시나리오 포함) 및 `bun run lint`, `bun run typecheck`(무관한 기존 `app/layout.tsx` 오류 1건 제외 통과) 통과. 실제 브라우저(`next dev`)에서 위치 권한 거부 시 로마(도착 도시) 기준 목록이 뜨는 것, 도시 선택 드롭다운으로 10개 도시 전환 시 이미지가 정상 로드되는 것, 나폴리·베로나 일부 이미지가 깨졌을 때 항목은 남고 "이미지를 불러올 수 없습니다" 대체 표시가 뜨는 것을 확인.
 - Blocker: 01-basic-route-planner 완료 상태이며 도착 도시 값(`trip-storage`의 `arrivalCityId`)을 그대로 폴백 기준으로 사용.
 - Revision: 없음. 다만 GPS 근접 판정 임계값(150km)과 맛집·관광지 이미지 URL(Wikimedia Commons `Special:FilePath`, 파일명은 구현 시점 최선 추정)은 스펙의 가정 항목에 이미 "확정 필요"로 남아 있던 부분이라 별도 태스크 변경 없이 그대로 둠 — 관련 follow-up 기록.
+- Revision(2026-08-20): 사용자가 이미지 깨짐이 많다고 지적해, 실제 파일명 추측 대신 Wikimedia Commons 검색 API로 존재를 확인한 파일명으로 전량 교체했다(`lib/nearby-places-data.ts`, `lib/city-highlights-data.ts`의 이미지 72개 전수 확인). 이 태스크의 수용 기준(이미지 깨짐 시 대체 표시)은 그대로 유지되며, 실제 깨지는 항목 수만 크게 줄었다.
