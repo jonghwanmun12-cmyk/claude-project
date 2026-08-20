@@ -43,29 +43,32 @@ export function buildDayPlan(
 }
 
 export type DayStayPosition = {
-  /** 같은 도시에 머무는 구간 안에서 이 날이 몇 번째인지(0부터 시작). */
+  /** 전체 일정에서 이 도시를 몇 번째로 맞이하는 날인지(0부터 시작). 도착지와
+   * 출발지가 같은 도시라 그 도시를 두 번(왕복 시작/끝) 방문하는 경우처럼,
+   * 방문이 여러 구간으로 나뉘어도 전체 일정 기준으로 이어서 센다. */
   dayIndexInStay: number;
-  /** 같은 도시에 머무는 구간의 총 일수. */
+  /** 전체 일정에서 이 도시에 머무는 날의 총 수(구간이 나뉘어도 합산). */
   totalDaysInStay: number;
 };
 
 /**
- * 일자별 일정에서 같은 도시가 연속으로 이어지는 구간(체류 구간)을 찾아, 각
- * 날짜가 그 구간의 몇 번째 날인지 계산한다. Day 카드가 같은 도시에 여러 날
- * 머물 때 서로 다른 관광지·맛집 후보를 보여주는 데 쓴다
- * (lib/nearby-places-data.ts의 getDayHighlights와 함께 사용).
+ * 일자별 일정에서 같은 도시에 머무는 날이 전체 몇 번째·총 며칠인지 계산한다.
+ * 같은 도시가 연속된 구간뿐 아니라(예: Day1~2 로마) 왕복 등으로 떨어져서
+ * 다시 나오는 경우(예: Day7~8도 로마)까지 전부 하나로 묶어서 센다 — 그래야
+ * Day 카드가 같은 도시에 여러 날 머물 때(구간이 나뉘어 있어도) 서로 다른
+ * 관광지·맛집 후보를 보여줄 수 있다(lib/nearby-places-data.ts의
+ * getDayHighlights와 함께 사용).
  */
 export function computeDayStayPositions(days: DayPlanEntry[]): DayStayPosition[] {
-  const positions: DayStayPosition[] = new Array(days.length);
-  let start = 0;
-  while (start < days.length) {
-    let end = start;
-    while (end < days.length && days[end].cityId === days[start].cityId) end++;
-    const total = end - start;
-    for (let i = start; i < end; i++) {
-      positions[i] = { dayIndexInStay: i - start, totalDaysInStay: total };
-    }
-    start = end;
+  const totalByCity = new Map<string, number>();
+  for (const day of days) {
+    totalByCity.set(day.cityId, (totalByCity.get(day.cityId) ?? 0) + 1);
   }
-  return positions;
+
+  const seenByCity = new Map<string, number>();
+  return days.map((day) => {
+    const dayIndexInStay = seenByCity.get(day.cityId) ?? 0;
+    seenByCity.set(day.cityId, dayIndexInStay + 1);
+    return { dayIndexInStay, totalDaysInStay: totalByCity.get(day.cityId)! };
+  });
 }

@@ -71,4 +71,22 @@ describe("computeDayStayPositions", () => {
       { dayIndexInStay: 3, totalDaysInStay: 4 },
     ]);
   });
+
+  it("도착지와 출발지가 같은 도시라 왕복으로 두 번 나뉘어 방문해도 이어서 센다", () => {
+    // 로마(2일)→피렌체(2일)→로마(2일) 형태의 왕복 루트.
+    const days = buildDayPlan(plan(["rome", "florence", "rome"]), "2026-09-10T14:00", "2026-09-16T09:00");
+    const positions = computeDayStayPositions(days);
+
+    const romeDays = days
+      .map((day, index) => ({ day, position: positions[index] }))
+      .filter(({ day }) => day.cityId === "rome");
+
+    const total = romeDays.length;
+    expect(romeDays.map(({ position }) => position.dayIndexInStay)).toEqual(
+      Array.from({ length: total }, (_, i) => i)
+    );
+    expect(romeDays.every(({ position }) => position.totalDaysInStay === total)).toBe(true);
+    // 왕복 두 구간(초반 로마, 후반 로마) 모두에 로마 날짜가 있어야 의미 있는 테스트다.
+    expect(romeDays.length).toBeGreaterThan(2);
+  });
 });
