@@ -340,7 +340,7 @@ export function TripPlanner() {
         <section aria-label="일자별 일정" className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-6 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <SectionHeading icon={CalendarRange} title="일자별 일정" description="Day별 추천 관광지·맛집과 사진을 확인하세요" />
-            <div className="flex gap-2">
+            <div className="flex w-full flex-wrap gap-2 sm:w-auto">
               <Button type="button" variant="outline" size="sm" onClick={exportIcs}>
                 캘린더 내보내기 (.ics)
               </Button>
