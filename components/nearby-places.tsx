@@ -73,6 +73,7 @@ export function NearbyPlaces() {
   const places = cityId ? getNearbyPlaces(cityId) : [];
   const sights = places.filter((place) => place.category === "sight");
   const foods = places.filter((place) => place.category === "food");
+  const cafes = places.filter((place) => place.category === "cafe");
   const cityName = cityId ? (getCity(cityId)?.name ?? cityId) : "";
 
   return (
@@ -118,6 +119,16 @@ export function NearbyPlaces() {
               <h3 className="text-sm font-semibold text-foreground">맛집 후보</h3>
               <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {foods.map((place) => (
+                  <PlaceCard key={place.id} place={place} cityName={cityName} />
+                ))}
+              </ul>
+            </div>
+          )}
+          {cafes.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <h3 className="text-sm font-semibold text-foreground">카페 후보</h3>
+              <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {cafes.map((place) => (
                   <PlaceCard key={place.id} place={place} cityName={cityName} />
                 ))}
               </ul>
