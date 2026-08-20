@@ -51,9 +51,10 @@ function routeHours(cityIds: string[]): number {
 
 /**
  * 순열 탐색으로 경유 도시 수를 제한한다. 6곳까지는 6! = 720가지라 즉시 계산 가능하다.
- * 그 이상은 대표성 기준 선택 단계에서 이미 상한을 두므로 이 값에 닿지 않는다.
+ * "꼭 가고 싶은 지역" 선택 UI도 이 값을 그대로 써서, 선택 단계에서부터 6개를
+ * 넘기지 못하게 막는다(넘기면 이 아래에서 조용히 잘리므로).
  */
-const MAX_VIA_CITIES = 6;
+export const MAX_VIA_CITIES = 6;
 
 export type ComputeRouteInput = {
   arrivalCityId: string;

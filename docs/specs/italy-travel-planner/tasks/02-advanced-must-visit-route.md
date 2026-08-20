@@ -10,10 +10,10 @@
 
 ## Acceptance criteria
 
-- [ ] 큐레이션 목록 중 하나 이상의 지역을 선택할 수 있다.
-- [ ] 선택한 지역을 하나 이상 지정하면, 생성되는 루트는 선택한 지역을 모두 포함한다.
-- [ ] 필수 지역을 포함한 루트는 도착 도시에서 시작하고 출발 도시에서 끝난다.
-- [ ] 선택한 지역 조합을 바꾸면 루트가 다시 계산되어 갱신된다.
+- [x] 큐레이션 목록 중 하나 이상의 지역을 선택할 수 있다.
+- [x] 선택한 지역을 하나 이상 지정하면, 생성되는 루트는 선택한 지역을 모두 포함한다.
+- [x] 필수 지역을 포함한 루트는 도착 도시에서 시작하고 출발 도시에서 끝난다.
+- [x] 선택한 지역 조합을 바꾸면 루트가 다시 계산되어 갱신된다.
 
 ## Constraints
 
@@ -30,10 +30,10 @@ None.
 
 ## Status
 
-pending
+completed
 
 ## Execution
 
-- Verification: —
+- Verification: `vitest run`(24/24 통과, 조합별 필수 지역 테스트·6곳 상한 테스트 포함), `tsc --noEmit`, `eslint` 모두 통과. 브라우저 프리뷰에서 토리노 단독 선택, 7곳 선택 시 6곳 상한/안내문/체크박스 비활성화, 해제 시 재활성화를 직접 확인.
 - Blocker: —
-- Revision: —
+- Revision: 01번 태스크의 `MAX_VIA_CITIES` 상수를 export해 UI 선택 상한과 라우팅 로직이 같은 값을 쓰게 함 — [must-visit-cap-truncation](../../../follow-ups/must-visit-cap-truncation.md) 후속 항목에서 제안한 대로 처리하고 해당 파일은 삭제.

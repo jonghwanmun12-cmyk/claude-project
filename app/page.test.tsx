@@ -58,3 +58,35 @@ test("입력값은 브라우저에 저장되어 다시 렌더링해도 유지된
   expect(screen.getByLabelText("도착 일시")).toHaveValue("2026-09-10T14:00");
   expect(screen.getByLabelText("출발 일시")).toHaveValue("2026-09-18T09:00");
 });
+
+test("꼭 가고 싶은 지역을 고르면 추천 루트가 그 지역을 포함한다", () => {
+  render(<Home />);
+
+  fireEvent.change(screen.getByLabelText("도착 일시"), {
+    target: { value: "2026-09-10T14:00" },
+  });
+  fireEvent.change(screen.getByLabelText("출발 일시"), {
+    target: { value: "2026-09-18T09:00" },
+  });
+  fireEvent.click(screen.getByLabelText("토리노"));
+
+  const route = screen.getByRole("region", { name: "추천 루트" });
+  expect(route).toBeInTheDocument();
+  expect(screen.getByText(/\d+\. 토리노/)).toBeInTheDocument();
+});
+
+test("선택할 수 있는 지역은 최대 6곳이다", () => {
+  render(<Home />);
+
+  const candidates = ["피렌체", "밀란", "나폴리", "볼로냐", "베로나", "피사", "토리노"];
+  candidates.forEach((name) => fireEvent.click(screen.getByLabelText(name)));
+
+  // 도착/출발(로마/베네치아)을 뺀 8곳 중 7곳을 눌렀지만, 6곳까지만 실제로 선택된다.
+  const checked = candidates.filter(
+    (name) => (screen.getByLabelText(name) as HTMLInputElement).checked
+  );
+  expect(checked).toHaveLength(6);
+  expect(
+    screen.getByText("최대 6곳까지 선택할 수 있어요. 다른 지역을 고르려면 먼저 하나를 해제하세요.")
+  ).toBeInTheDocument();
+});

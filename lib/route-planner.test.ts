@@ -79,6 +79,43 @@ describe("computeRoute", () => {
     );
   });
 
+  it("서로 다른 필수 지역 조합마다 그 지역들을 모두 포함한다", () => {
+    const combos = [
+      ["milan"],
+      ["florence", "naples"],
+      ["turin", "genoa", "bologna"],
+    ];
+
+    for (const mustVisitCityIds of combos) {
+      const plan = computeRoute({
+        arrivalCityId: "rome",
+        departureCityId: "venice",
+        nights: 10,
+        mustVisitCityIds,
+      });
+
+      expect(plan.cityIds[0]).toBe("rome");
+      expect(plan.cityIds.at(-1)).toBe("venice");
+      expect(plan.cityIds).toEqual(expect.arrayContaining(mustVisitCityIds));
+    }
+  });
+
+  it("필수 지역 선택을 비우면 대표성 기준의 기본 루트로 돌아간다", () => {
+    const withEmptyMustVisit = computeRoute({
+      arrivalCityId: "rome",
+      departureCityId: "venice",
+      nights: 8,
+      mustVisitCityIds: [],
+    });
+    const withoutMustVisit = computeRoute({
+      arrivalCityId: "rome",
+      departureCityId: "venice",
+      nights: 8,
+    });
+
+    expect(withEmptyMustVisit).toEqual(withoutMustVisit);
+  });
+
   it("구간 이동시간 합이 totalHours와 같다", () => {
     const plan = computeRoute({
       arrivalCityId: "rome",

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { CITIES, getCity } from "@/lib/travel-data";
-import { computeNights, computeRoute, type RoutePlan } from "@/lib/route-planner";
+import { computeNights, computeRoute, MAX_VIA_CITIES, type RoutePlan } from "@/lib/route-planner";
 import { loadTrip, saveTrip, type StoredTrip } from "@/lib/trip-storage";
 
 const DEFAULT_ARRIVAL: StoredTrip = {
@@ -72,6 +72,24 @@ export function TripPlanner() {
     }
   }, [trip]);
 
+  // 도착/출발 도시는 경유지 선택 목록에 낼 필요가 없다 — 어차피 루트의
+  // 시작/끝으로 고정되어 있고, computeRoute도 이 둘을 제외하고 계산한다.
+  const mustVisitCandidates = CITIES.filter(
+    (city) => city.id !== trip.arrivalCityId && city.id !== trip.departureCityId
+  );
+  const mustVisitLimitReached = trip.mustVisitCityIds.length >= MAX_VIA_CITIES;
+
+  function toggleMustVisit(cityId: string) {
+    setTrip((prev) => {
+      const already = prev.mustVisitCityIds.includes(cityId);
+      if (already) {
+        return { ...prev, mustVisitCityIds: prev.mustVisitCityIds.filter((id) => id !== cityId) };
+      }
+      if (prev.mustVisitCityIds.length >= MAX_VIA_CITIES) return prev;
+      return { ...prev, mustVisitCityIds: [...prev.mustVisitCityIds, cityId] };
+    });
+  }
+
   return (
     <div className="flex w-full max-w-2xl flex-col gap-8">
       <form
@@ -87,7 +105,14 @@ export function TripPlanner() {
               id="arrival-city"
               className="h-9 rounded-md border border-input bg-background px-2.5 text-sm"
               value={trip.arrivalCityId}
-              onChange={(event) => setTrip((prev) => ({ ...prev, arrivalCityId: event.target.value }))}
+              onChange={(event) => {
+                const cityId = event.target.value;
+                setTrip((prev) => ({
+                  ...prev,
+                  arrivalCityId: cityId,
+                  mustVisitCityIds: prev.mustVisitCityIds.filter((id) => id !== cityId),
+                }));
+              }}
             >
               {CITIES.map((city) => (
                 <option key={city.id} value={city.id}>
@@ -116,7 +141,14 @@ export function TripPlanner() {
               id="departure-city"
               className="h-9 rounded-md border border-input bg-background px-2.5 text-sm"
               value={trip.departureCityId}
-              onChange={(event) => setTrip((prev) => ({ ...prev, departureCityId: event.target.value }))}
+              onChange={(event) => {
+                const cityId = event.target.value;
+                setTrip((prev) => ({
+                  ...prev,
+                  departureCityId: cityId,
+                  mustVisitCityIds: prev.mustVisitCityIds.filter((id) => id !== cityId),
+                }));
+              }}
             >
               {CITIES.map((city) => (
                 <option key={city.id} value={city.id}>
@@ -138,6 +170,37 @@ export function TripPlanner() {
             />
           </div>
         </div>
+
+        <fieldset className="flex flex-col gap-2">
+          <legend className="text-sm font-medium text-foreground">
+            꼭 가고 싶은 지역 (최대 {MAX_VIA_CITIES}곳, 선택하지 않아도 됩니다)
+          </legend>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {mustVisitCandidates.map((city) => {
+              const checked = trip.mustVisitCityIds.includes(city.id);
+              return (
+                <label
+                  key={city.id}
+                  className="flex items-center gap-1.5 text-sm text-foreground"
+                >
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    disabled={!checked && mustVisitLimitReached}
+                    onChange={() => toggleMustVisit(city.id)}
+                  />
+                  {city.name}
+                </label>
+              );
+            })}
+          </div>
+          {mustVisitLimitReached && (
+            <p className="text-xs text-muted-foreground">
+              최대 {MAX_VIA_CITIES}곳까지 선택할 수 있어요. 다른 지역을 고르려면 먼저 하나를 해제하세요.
+            </p>
+          )}
+        </fieldset>
+
         <Button type="submit" className="w-fit">
           루트 추천받기
         </Button>
