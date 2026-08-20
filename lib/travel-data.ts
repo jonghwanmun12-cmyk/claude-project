@@ -13,19 +13,22 @@ export type City = {
   nameEn: string;
   /** 대표성(주요도) 점수. 높을수록 필수 방문 지역 없이 루트를 짤 때 먼저 포함된다. */
   priority: number;
+  /** 도시 중심부의 대략적인 위도/경도(도 단위). 태스크 05의 GPS 최근접 도시 판별용. */
+  lat: number;
+  lng: number;
 };
 
 export const CITIES: City[] = [
-  { id: "rome", name: "로마", nameEn: "Rome", priority: 5 },
-  { id: "florence", name: "피렌체", nameEn: "Florence", priority: 5 },
-  { id: "venice", name: "베네치아", nameEn: "Venice", priority: 5 },
-  { id: "milan", name: "밀란", nameEn: "Milan", priority: 4 },
-  { id: "naples", name: "나폴리", nameEn: "Naples", priority: 4 },
-  { id: "bologna", name: "볼로냐", nameEn: "Bologna", priority: 3 },
-  { id: "verona", name: "베로나", nameEn: "Verona", priority: 3 },
-  { id: "pisa", name: "피사", nameEn: "Pisa", priority: 3 },
-  { id: "turin", name: "토리노", nameEn: "Turin", priority: 2 },
-  { id: "genoa", name: "제노바", nameEn: "Genoa", priority: 2 },
+  { id: "rome", name: "로마", nameEn: "Rome", priority: 5, lat: 41.9028, lng: 12.4964 },
+  { id: "florence", name: "피렌체", nameEn: "Florence", priority: 5, lat: 43.7696, lng: 11.2558 },
+  { id: "venice", name: "베네치아", nameEn: "Venice", priority: 5, lat: 45.4408, lng: 12.3155 },
+  { id: "milan", name: "밀란", nameEn: "Milan", priority: 4, lat: 45.4642, lng: 9.19 },
+  { id: "naples", name: "나폴리", nameEn: "Naples", priority: 4, lat: 40.8518, lng: 14.2681 },
+  { id: "bologna", name: "볼로냐", nameEn: "Bologna", priority: 3, lat: 44.4949, lng: 11.3426 },
+  { id: "verona", name: "베로나", nameEn: "Verona", priority: 3, lat: 45.4384, lng: 10.9916 },
+  { id: "pisa", name: "피사", nameEn: "Pisa", priority: 3, lat: 43.7228, lng: 10.4017 },
+  { id: "turin", name: "토리노", nameEn: "Turin", priority: 2, lat: 45.0703, lng: 7.6869 },
+  { id: "genoa", name: "제노바", nameEn: "Genoa", priority: 2, lat: 44.4056, lng: 8.9463 },
 ];
 
 const CITY_BY_ID = new Map(CITIES.map((city) => [city.id, city]));
