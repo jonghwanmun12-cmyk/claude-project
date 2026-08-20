@@ -33,7 +33,9 @@ export function PlaceCard({ place, cityName }: { place: NearbyPlace; cityName: s
       )}
       <div className="flex flex-col gap-1 px-3 pb-3">
         <span className="text-sm font-medium text-foreground">{place.name}</span>
-        <span className="text-xs text-muted-foreground">{place.category === "food" ? "맛집" : "관광지"}</span>
+        <span className="text-xs text-muted-foreground">
+          {place.category === "food" ? "맛집" : place.category === "cafe" ? "카페" : "관광지"}
+        </span>
         <a
           href={buildGoogleMapsSearchUrl(place.name, cityName)}
           target="_blank"

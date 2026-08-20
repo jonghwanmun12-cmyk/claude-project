@@ -29,3 +29,24 @@ test("하루만 머물면 기존처럼 최대 5개를 보여준다", () => {
   expect(highlights.length).toBeLessThanOrEqual(5);
   expect(highlights.length).toBeGreaterThan(0);
 });
+
+test("카페가 있는 도시는 Day마다 카페를 정확히 1곳 고정으로 포함한다", () => {
+  for (const day of [0, 1, 2]) {
+    const highlights = getDayHighlights("rome", day, 3);
+    const cafes = highlights.filter((place) => place.category === "cafe");
+    expect(cafes).toHaveLength(1);
+  }
+});
+
+test("왕복으로 같은 도시를 두 번 방문해도(체류 구간이 나뉘어도) 전체 기준으로 관광지·맛집 후보가 겹치지 않는다", () => {
+  // 로마(Day1~2) → 다른 도시 → 로마(Day7~8)처럼 총 4일을 로마에 머무는 경우를 흉내낸다.
+  // 카페는 도시당 후보가 적어(2곳) 4일이면 반복될 수 있지만, 관광지·맛집은 겹치지 않아야 한다.
+  const seen = new Set<string>();
+  for (let dayIndex = 0; dayIndex < 4; dayIndex++) {
+    const highlights = getDayHighlights("rome", dayIndex, 4).filter((place) => place.category !== "cafe");
+    for (const place of highlights) {
+      expect(seen.has(place.id), `${place.id}가 이미 다른 날에 나왔음`).toBe(false);
+      seen.add(place.id);
+    }
+  }
+});
