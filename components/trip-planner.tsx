@@ -4,7 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { buildHotelSearchUrl, TRAIN_BOOKING_HOMEPAGE_URL } from "@/lib/booking-links";
+import { buildDayPlan } from "@/lib/day-plan";
+import { downloadBlob } from "@/lib/download-file";
+import { buildIcsContent } from "@/lib/ics-export";
 import { buildItinerary } from "@/lib/itinerary";
+import { buildDayPlanPdfBlob } from "@/lib/pdf-export";
 import { CITIES, getCity } from "@/lib/travel-data";
 import { computeNights, computeRoute, MAX_VIA_CITIES, type RoutePlan } from "@/lib/route-planner";
 import { loadTrip, saveTrip, type StoredTrip } from "@/lib/trip-storage";
@@ -85,6 +89,23 @@ export function TripPlanner() {
     () => (plan ? buildItinerary(plan, trip.arrivalDateTime, trip.departureDateTime) : []),
     [plan, trip.arrivalDateTime, trip.departureDateTime]
   );
+
+  // Day 1, Day 2... 형태의 일자별 일정. itinerary와 같은 날짜 경계를 쓰므로
+  // "추천 루트"의 숙소 검색 날짜와 항상 일치한다.
+  const dayPlan = useMemo(
+    () => (plan ? buildDayPlan(plan, trip.arrivalDateTime, trip.departureDateTime) : []),
+    [plan, trip.arrivalDateTime, trip.departureDateTime]
+  );
+
+  function exportIcs() {
+    const ics = buildIcsContent(dayPlan, (cityId) => getCity(cityId)?.name ?? cityId);
+    downloadBlob(new Blob([ics], { type: "text/calendar;charset=utf-8" }), "italy-trip.ics");
+  }
+
+  function exportPdf() {
+    const blob = buildDayPlanPdfBlob(dayPlan, (cityId) => getCity(cityId)?.nameEn ?? cityId);
+    downloadBlob(blob, "italy-trip.pdf");
+  }
 
   // 도착/출발 도시는 경유지 선택 목록에 낼 필요가 없다 — 어차피 루트의
   // 시작/끝으로 고정되어 있고, computeRoute도 이 둘을 제외하고 계산한다.
@@ -271,6 +292,31 @@ export function TripPlanner() {
           <p className="text-sm text-muted-foreground">
             총 이동 시간: 약 {formatHours(plan.totalHours)}
           </p>
+        </section>
+      )}
+
+      {plan && dayPlan.length > 0 && (
+        <section aria-label="일자별 일정" className="flex flex-col gap-4 rounded-xl border border-border bg-card p-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold text-foreground">일자별 일정</h2>
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" size="sm" onClick={exportIcs}>
+                캘린더 내보내기 (.ics)
+              </Button>
+              <Button type="button" variant="outline" size="sm" onClick={exportPdf}>
+                PDF 내보내기
+              </Button>
+            </div>
+          </div>
+          <ol className="flex flex-col gap-1">
+            {dayPlan.map((day) => (
+              <li key={day.dayNumber} className="flex gap-2 text-sm text-foreground">
+                <span className="font-medium">Day {day.dayNumber}</span>
+                <span className="text-muted-foreground">{formatDateKorean(day.date)}</span>
+                <span>{getCity(day.cityId)?.name ?? day.cityId}</span>
+              </li>
+            ))}
+          </ol>
         </section>
       )}
     </div>

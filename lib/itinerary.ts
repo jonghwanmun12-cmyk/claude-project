@@ -5,7 +5,8 @@ function toDateOnly(iso: string): string {
   return iso.slice(0, 10);
 }
 
-function addDays(dateOnly: string, days: number): string {
+/** "YYYY-MM-DD"에 일 수를 더한다(음수도 가능). lib/day-plan.ts에서도 쓴다. */
+export function addDays(dateOnly: string, days: number): string {
   const [year, month, day] = dateOnly.split("-").map(Number);
   const date = new Date(Date.UTC(year, month - 1, day));
   date.setUTCDate(date.getUTCDate() + days);

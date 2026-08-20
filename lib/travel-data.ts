@@ -6,21 +6,26 @@
 export type City = {
   id: string;
   name: string;
+  /**
+   * 로마자 표기. jsPDF 기본 폰트가 한글 글리프를 지원하지 않아 PDF
+   * 내보내기(태스크 04)에서만 이 값을 쓴다. 화면·ICS는 한글 name을 쓴다.
+   */
+  nameEn: string;
   /** 대표성(주요도) 점수. 높을수록 필수 방문 지역 없이 루트를 짤 때 먼저 포함된다. */
   priority: number;
 };
 
 export const CITIES: City[] = [
-  { id: "rome", name: "로마", priority: 5 },
-  { id: "florence", name: "피렌체", priority: 5 },
-  { id: "venice", name: "베네치아", priority: 5 },
-  { id: "milan", name: "밀란", priority: 4 },
-  { id: "naples", name: "나폴리", priority: 4 },
-  { id: "bologna", name: "볼로냐", priority: 3 },
-  { id: "verona", name: "베로나", priority: 3 },
-  { id: "pisa", name: "피사", priority: 3 },
-  { id: "turin", name: "토리노", priority: 2 },
-  { id: "genoa", name: "제노바", priority: 2 },
+  { id: "rome", name: "로마", nameEn: "Rome", priority: 5 },
+  { id: "florence", name: "피렌체", nameEn: "Florence", priority: 5 },
+  { id: "venice", name: "베네치아", nameEn: "Venice", priority: 5 },
+  { id: "milan", name: "밀란", nameEn: "Milan", priority: 4 },
+  { id: "naples", name: "나폴리", nameEn: "Naples", priority: 4 },
+  { id: "bologna", name: "볼로냐", nameEn: "Bologna", priority: 3 },
+  { id: "verona", name: "베로나", nameEn: "Verona", priority: 3 },
+  { id: "pisa", name: "피사", nameEn: "Pisa", priority: 3 },
+  { id: "turin", name: "토리노", nameEn: "Turin", priority: 2 },
+  { id: "genoa", name: "제노바", nameEn: "Genoa", priority: 2 },
 ];
 
 const CITY_BY_ID = new Map(CITIES.map((city) => [city.id, city]));

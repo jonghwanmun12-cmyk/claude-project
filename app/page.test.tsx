@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { beforeEach, expect, test } from "vitest";
+import { beforeEach, expect, test, vi } from "vitest";
 
 import Home from "@/app/page";
 
@@ -118,4 +118,79 @@ test("구간마다 숙소·이동수단 검색 링크가 나온다", () => {
     expect(link).toHaveAttribute("href", "https://www.trenitalia.com");
     expect(link).toHaveAttribute("target", "_blank");
   });
+});
+
+test("일자별 일정이 도착일부터 출발일까지 표시된다", () => {
+  render(<Home />);
+
+  fireEvent.change(screen.getByLabelText("도착 일시"), {
+    target: { value: "2026-09-10T14:00" },
+  });
+  fireEvent.change(screen.getByLabelText("출발 일시"), {
+    target: { value: "2026-09-18T09:00" },
+  });
+
+  const dayPlan = screen.getByRole("region", { name: "일자별 일정" });
+  expect(dayPlan).toBeInTheDocument();
+  expect(screen.getByText("Day 1")).toBeInTheDocument();
+  // 8박 + 출발일 = 9일치.
+  expect(screen.getByText("Day 9")).toBeInTheDocument();
+  expect(screen.queryByText("Day 10")).not.toBeInTheDocument();
+});
+
+test("캘린더 내보내기를 누르면 화면 일정과 같은 날짜·도시의 .ics 파일을 만든다", () => {
+  render(<Home />);
+
+  fireEvent.change(screen.getByLabelText("도착 일시"), {
+    target: { value: "2026-09-10T14:00" },
+  });
+  fireEvent.change(screen.getByLabelText("출발 일시"), {
+    target: { value: "2026-09-18T09:00" },
+  });
+
+  const blobs: Blob[] = [];
+  const createObjectURL = vi
+    .spyOn(URL, "createObjectURL")
+    .mockImplementation((blob) => {
+      blobs.push(blob as Blob);
+      return "blob:mock-ics";
+    });
+  vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
+  vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+
+  fireEvent.click(screen.getByRole("button", { name: "캘린더 내보내기 (.ics)" }));
+
+  expect(blobs).toHaveLength(1);
+  expect(blobs[0].type).toBe("text/calendar;charset=utf-8");
+  return blobs[0].text().then((text) => {
+    expect(text).toContain("BEGIN:VCALENDAR");
+    expect(text).toContain("DTSTART;VALUE=DATE:20260910");
+    expect(text).toContain("SUMMARY:Day 1: 로마");
+    createObjectURL.mockRestore();
+  });
+});
+
+test("PDF 내보내기를 누르면 화면 일정과 같은 날짜·도시가 담긴 PDF 파일을 만든다", () => {
+  render(<Home />);
+
+  fireEvent.change(screen.getByLabelText("도착 일시"), {
+    target: { value: "2026-09-10T14:00" },
+  });
+  fireEvent.change(screen.getByLabelText("출발 일시"), {
+    target: { value: "2026-09-18T09:00" },
+  });
+
+  const blobs: Blob[] = [];
+  vi.spyOn(URL, "createObjectURL").mockImplementation((blob) => {
+    blobs.push(blob as Blob);
+    return "blob:mock-pdf";
+  });
+  vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
+  vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+
+  fireEvent.click(screen.getByRole("button", { name: "PDF 내보내기" }));
+
+  expect(blobs).toHaveLength(1);
+  expect(blobs[0].type).toBe("application/pdf");
+  expect(blobs[0].size).toBeGreaterThan(0);
 });
