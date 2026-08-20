@@ -10,9 +10,9 @@ None.
 
 ## Acceptance criteria
 
-- [ ] 카테고리별 예상 비용을 입력할 수 있다.
-- [ ] 입력한 금액의 합계가 즉시 갱신되어 표시된다.
-- [ ] 새로고침 후에도 입력했던 값과 합계가 유지된다.
+- [x] 카테고리별 예상 비용을 입력할 수 있다.
+- [x] 입력한 금액의 합계가 즉시 갱신되어 표시된다.
+- [x] 새로고침 후에도 입력했던 값과 합계가 유지된다.
 
 ## Constraints
 
@@ -29,10 +29,10 @@ None.
 
 ## Status
 
-pending
+completed
 
 ## Execution
 
-- Verification: —
+- Verification: `vitest run`(합계 계산·저장/복원 테스트 포함), `tsc --noEmit`, `eslint` 모두 통과. 브라우저에서 두 카테고리에 금액을 입력해 합계가 즉시 바뀌는 것과, 전체 새로고침 후에도 입력값·합계가 유지되는 것을 직접 확인.
 - Blocker: —
-- Revision: —
+- Revision: 통화는 원(KRW)으로 가정(화면 전체가 한국어 사용자 대상이라). `code-review low` 1회 — `hasLocalStorage()` 중복을 06번 태스크와 함께 `lib/local-storage.ts`로 추출해 해결.

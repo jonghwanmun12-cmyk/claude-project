@@ -194,3 +194,42 @@ test("PDF 내보내기를 누르면 화면 일정과 같은 날짜·도시가 �
   expect(blobs[0].type).toBe("application/pdf");
   expect(blobs[0].size).toBeGreaterThan(0);
 });
+
+test("체크리스트 항목을 체크하면 재렌더링해도 유지된다", () => {
+  const { unmount } = render(<Home />);
+
+  const checklist = screen.getByRole("region", { name: "여행 준비 체크리스트" });
+  expect(checklist).toBeInTheDocument();
+
+  const passportItem = screen.getByLabelText(/여권 유효기간/);
+  expect(passportItem).not.toBeChecked();
+  fireEvent.click(passportItem);
+  expect(passportItem).toBeChecked();
+
+  unmount();
+  render(<Home />);
+
+  expect(screen.getByLabelText(/여권 유효기간/)).toBeChecked();
+  // 체크하지 않은 항목은 그대로 해제 상태여야 한다.
+  expect(screen.getByLabelText(/여행자 보험/)).not.toBeChecked();
+});
+
+test("예산 트래커에 금액을 입력하면 합계가 즉시 갱신되고 재렌더링해도 유지된다", () => {
+  const { unmount } = render(<Home />);
+
+  const budget = screen.getByRole("region", { name: "예산 트래커" });
+  expect(budget).toBeInTheDocument();
+  expect(screen.getByText("합계: 0원")).toBeInTheDocument();
+
+  fireEvent.change(screen.getByLabelText("교통(기차·항공)"), { target: { value: "300000" } });
+  fireEvent.change(screen.getByLabelText("숙소"), { target: { value: "800000" } });
+
+  expect(screen.getByText("합계: 1,100,000원")).toBeInTheDocument();
+
+  unmount();
+  render(<Home />);
+
+  expect(screen.getByLabelText("교통(기차·항공)")).toHaveValue(300000);
+  expect(screen.getByLabelText("숙소")).toHaveValue(800000);
+  expect(screen.getByText("합계: 1,100,000원")).toBeInTheDocument();
+});

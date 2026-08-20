@@ -3,6 +3,8 @@
 // 편집할 수 있게 하기 위함이다.
 // 근거: docs/decisions/data-and-booking-strategy.md
 
+import { hasLocalStorage } from "@/lib/local-storage";
+
 const STORAGE_KEY = "italy-trip-planner:trip";
 
 export type StoredTrip = {
@@ -12,10 +14,6 @@ export type StoredTrip = {
   departureDateTime: string;
   mustVisitCityIds: string[];
 };
-
-function hasLocalStorage(): boolean {
-  return typeof window !== "undefined" && !!window.localStorage;
-}
 
 export function saveTrip(trip: StoredTrip): void {
   if (!hasLocalStorage()) return;

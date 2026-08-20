@@ -1,3 +1,5 @@
+import { BudgetTracker } from "@/components/budget-tracker";
+import { Checklist } from "@/components/checklist";
 import { TripPlanner } from "@/components/trip-planner";
 
 export default function Home() {
@@ -6,6 +8,8 @@ export default function Home() {
       <main className="flex w-full max-w-3xl flex-1 flex-col items-center gap-8 px-6 py-16">
         <h1 className="text-2xl font-semibold text-foreground">이탈리아 여행 플래너</h1>
         <TripPlanner />
+        <Checklist />
+        <BudgetTracker />
       </main>
     </div>
   );
