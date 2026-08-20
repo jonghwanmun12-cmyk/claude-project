@@ -35,8 +35,8 @@ export const NEARBY_PLACES: Record<string, NearbyPlace[]> = {
     { id: "milan-risotto", name: "리조토 알라 밀라네제 맛집", category: "food", imageUrl: commonsFilePath("Risotto alla milanese.jpg") },
   ],
   naples: [
-    { id: "naples-panorama", name: "나폴리 항구 전경", category: "sight", imageUrl: commonsFilePath("Napoli dal mare.jpg") },
-    { id: "naples-pizza", name: "피자 마르게리타 맛집", category: "food", imageUrl: commonsFilePath("Pizza Margherita in Napoli.jpg") },
+    { id: "naples-panorama", name: "나폴리 항구 전경", category: "sight", imageUrl: commonsFilePath("Panorama view of bay and the city Naples, Campania, Italy, May 2005 (52104979928).jpg") },
+    { id: "naples-pizza", name: "피자 마르게리타 맛집", category: "food", imageUrl: commonsFilePath("Pizza Margherita 01.jpg") },
   ],
   bologna: [
     { id: "bologna-piazza-maggiore", name: "피아자 마조레", category: "sight", imageUrl: commonsFilePath("Piazza Maggiore (Bologna).jpg") },
@@ -44,7 +44,7 @@ export const NEARBY_PLACES: Record<string, NearbyPlace[]> = {
   ],
   verona: [
     { id: "verona-arena", name: "베로나 아레나", category: "sight", imageUrl: commonsFilePath("Verona Arena.jpg") },
-    { id: "verona-amarone", name: "리조토 알아마로네 맛집", category: "food", imageUrl: commonsFilePath("Risotto all'Amarone.jpg") },
+    { id: "verona-amarone", name: "리조토 알아마로네 맛집", category: "food", imageUrl: commonsFilePath("A bottle of Amarone della Valpolicella.jpg") },
   ],
   pisa: [
     { id: "pisa-tower", name: "피사의 사탑", category: "sight", imageUrl: commonsFilePath("Piazza dei Miracoli, Pisa.jpg") },
