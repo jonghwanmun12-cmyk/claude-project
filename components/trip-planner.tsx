@@ -9,6 +9,7 @@ import { downloadBlob } from "@/lib/download-file";
 import { buildIcsContent } from "@/lib/ics-export";
 import { buildItinerary } from "@/lib/itinerary";
 import { buildDayPlanPdfBlob } from "@/lib/pdf-export";
+import { buildShareUrl, parseSharedTrip } from "@/lib/share-link";
 import { CITIES, getCity } from "@/lib/travel-data";
 import { computeNights, computeRoute, MAX_VIA_CITIES, type RoutePlan } from "@/lib/route-planner";
 import { loadTrip, saveTrip, type StoredTrip } from "@/lib/trip-storage";
@@ -42,12 +43,18 @@ function formatDateKorean(dateOnly: string): string {
 export function TripPlanner() {
   const [trip, setTrip] = useState<StoredTrip>(DEFAULT_ARRIVAL);
   const [hasLoaded, setHasLoaded] = useState(false);
+  const [shareUrlRevealed, setShareUrlRevealed] = useState(false);
 
   // 서버에는 localStorage가 없으므로, 렌더링 시점에 바로 읽으면 서버가
   // 그려준 기본값과 클라이언트 값이 달라져 하이드레이션 오류가 난다. 마운트
   // 이후에만 저장된 값을 읽어와 반영한다.
   useEffect(() => {
-    const stored = loadTrip();
+    // 공유 링크로 들어온 경우, 이 브라우저에 저장된 값보다 링크의 값을
+    // 먼저 쓴다 — 링크를 눌러 열었다는 것 자체가 그 일정을 보겠다는
+    // 의도이기 때문이다. 링크가 없거나 유효하지 않으면 평소처럼
+    // localStorage 값을 쓴다.
+    const shared = parseSharedTrip(window.location.search);
+    const stored = shared ?? loadTrip();
     // 브라우저 전용 저장소를 마운트 후 1회 읽어와 반영하는 경로라, 하이드레이션
     // 불일치를 피하려면 이 방식이 필요하다.
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -59,6 +66,14 @@ export function TripPlanner() {
     if (!hasLoaded) return;
     saveTrip(trip);
   }, [trip, hasLoaded]);
+
+  // trip이 바뀔 때마다 다시 계산되므로 항상 지금 입력값을 가리킨다. 버튼을
+  // 누르기 전에는 화면에 보여주지 않을 뿐이라, "입력을 바꿨는데 링크는
+  // 예전 값"이라는 불일치가 생기지 않는다.
+  const shareUrl = useMemo(
+    () => (typeof window === "undefined" ? null : buildShareUrl(trip, window.location.origin, window.location.pathname)),
+    [trip]
+  );
 
   const { plan, error } = useMemo<{ plan: RoutePlan | null; error: string | null }>(() => {
     if (!trip.arrivalDateTime || !trip.departureDateTime) {
@@ -306,6 +321,9 @@ export function TripPlanner() {
               <Button type="button" variant="outline" size="sm" onClick={exportPdf}>
                 PDF 내보내기
               </Button>
+              <Button type="button" variant="outline" size="sm" onClick={() => setShareUrlRevealed(true)}>
+                공유 링크 만들기
+              </Button>
             </div>
           </div>
           <ol className="flex flex-col gap-1">
@@ -317,6 +335,24 @@ export function TripPlanner() {
               </li>
             ))}
           </ol>
+          {shareUrlRevealed && shareUrl && (
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="share-url" className="text-sm font-medium text-foreground">
+                공유 링크
+              </label>
+              <input
+                id="share-url"
+                type="text"
+                readOnly
+                value={shareUrl}
+                onFocus={(event) => event.currentTarget.select()}
+                className="h-9 rounded-md border border-input bg-background px-2.5 text-sm"
+              />
+              <p className="text-xs text-muted-foreground">
+                이 링크를 열면 로그인 없이 같은 루트와 일자별 일정을 볼 수 있어요.
+              </p>
+            </div>
+          )}
         </section>
       )}
     </div>

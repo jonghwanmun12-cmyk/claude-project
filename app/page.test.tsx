@@ -233,3 +233,49 @@ test("예산 트래커에 금액을 입력하면 합계가 즉시 갱신되고 �
   expect(screen.getByLabelText("숙소")).toHaveValue(800000);
   expect(screen.getByText("합계: 1,100,000원")).toBeInTheDocument();
 });
+
+test("공유 링크 만들기를 누르면 현재 입력값이 담긴 URL이 나온다", () => {
+  render(<Home />);
+
+  fireEvent.change(screen.getByLabelText("도착 일시"), {
+    target: { value: "2026-09-10T14:00" },
+  });
+  fireEvent.change(screen.getByLabelText("출발 일시"), {
+    target: { value: "2026-09-18T09:00" },
+  });
+  fireEvent.click(screen.getByLabelText("토리노"));
+
+  fireEvent.click(screen.getByRole("button", { name: "공유 링크 만들기" }));
+
+  const shareInput = screen.getByLabelText("공유 링크") as HTMLInputElement;
+  const url = new URL(shareInput.value);
+
+  expect(url.searchParams.get("arrival")).toBe("rome");
+  expect(url.searchParams.get("arrivalAt")).toBe("2026-09-10T14:00");
+  expect(url.searchParams.get("departure")).toBe("venice");
+  expect(url.searchParams.get("departureAt")).toBe("2026-09-18T09:00");
+  expect(url.searchParams.get("mustVisit")).toBe("turin");
+});
+
+test("공유 링크로 열면 로그인/저장된 값 없이도 같은 루트와 일자별 일정이 보인다", () => {
+  window.history.pushState(
+    {},
+    "",
+    "/?arrival=rome&arrivalAt=2026-09-10T14:00&departure=venice&departureAt=2026-09-18T09:00&mustVisit=turin"
+  );
+
+  try {
+    render(<Home />);
+
+    expect(screen.getByLabelText("도착 일시")).toHaveValue("2026-09-10T14:00");
+    expect(screen.getByLabelText("출발 일시")).toHaveValue("2026-09-18T09:00");
+    expect(screen.getByRole("region", { name: "추천 루트" })).toBeInTheDocument();
+    expect(screen.getByText(/\d+\. 토리노/)).toBeInTheDocument();
+
+    const dayPlan = screen.getByRole("region", { name: "일자별 일정" });
+    expect(dayPlan).toBeInTheDocument();
+    expect(screen.getByText("Day 1")).toBeInTheDocument();
+  } finally {
+    window.history.pushState({}, "", "/");
+  }
+});
