@@ -1,0 +1,176 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+
+import { Button } from "@/components/ui/button";
+import { CITIES, getCity } from "@/lib/travel-data";
+import { computeNights, computeRoute, type RoutePlan } from "@/lib/route-planner";
+import { loadTrip, saveTrip, type StoredTrip } from "@/lib/trip-storage";
+
+const DEFAULT_ARRIVAL: StoredTrip = {
+  arrivalCityId: "rome",
+  arrivalDateTime: "",
+  departureCityId: "venice",
+  departureDateTime: "",
+  mustVisitCityIds: [],
+};
+
+function formatHours(hours: number): string {
+  // 여러 구간의 소수 시간을 더하면 부동소수점 오차로 59.9999...분처럼 60분에
+  // 아주 가까운 값이 나올 수 있다. 분을 올림한 뒤 60이 되면 시간으로 올려준다.
+  let wholeHours = Math.floor(hours);
+  let minutes = Math.round((hours - wholeHours) * 60);
+  if (minutes === 60) {
+    wholeHours += 1;
+    minutes = 0;
+  }
+  if (minutes === 0) return `${wholeHours}시간`;
+  return `${wholeHours}시간 ${minutes}분`;
+}
+
+export function TripPlanner() {
+  const [trip, setTrip] = useState<StoredTrip>(DEFAULT_ARRIVAL);
+  const [hasLoaded, setHasLoaded] = useState(false);
+
+  // 서버에는 localStorage가 없으므로, 렌더링 시점에 바로 읽으면 서버가
+  // 그려준 기본값과 클라이언트 값이 달라져 하이드레이션 오류가 난다. 마운트
+  // 이후에만 저장된 값을 읽어와 반영한다.
+  useEffect(() => {
+    const stored = loadTrip();
+    // 브라우저 전용 저장소를 마운트 후 1회 읽어와 반영하는 경로라, 하이드레이션
+    // 불일치를 피하려면 이 방식이 필요하다.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (stored) setTrip(stored);
+    setHasLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hasLoaded) return;
+    saveTrip(trip);
+  }, [trip, hasLoaded]);
+
+  const { plan, error } = useMemo<{ plan: RoutePlan | null; error: string | null }>(() => {
+    if (!trip.arrivalDateTime || !trip.departureDateTime) {
+      return { plan: null, error: null };
+    }
+    if (new Date(trip.departureDateTime).getTime() <= new Date(trip.arrivalDateTime).getTime()) {
+      return { plan: null, error: "출발 시간은 도착 시간보다 나중이어야 합니다." };
+    }
+    try {
+      const nights = computeNights(trip.arrivalDateTime, trip.departureDateTime);
+      return {
+        plan: computeRoute({
+          arrivalCityId: trip.arrivalCityId,
+          departureCityId: trip.departureCityId,
+          nights,
+          mustVisitCityIds: trip.mustVisitCityIds,
+        }),
+        error: null,
+      };
+    } catch (err) {
+      return { plan: null, error: err instanceof Error ? err.message : "루트를 계산할 수 없습니다." };
+    }
+  }, [trip]);
+
+  return (
+    <div className="flex w-full max-w-2xl flex-col gap-8">
+      <form
+        className="flex flex-col gap-4 rounded-xl border border-border bg-card p-6"
+        onSubmit={(event) => event.preventDefault()}
+      >
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="arrival-city" className="text-sm font-medium text-foreground">
+              도착 도시
+            </label>
+            <select
+              id="arrival-city"
+              className="h-9 rounded-md border border-input bg-background px-2.5 text-sm"
+              value={trip.arrivalCityId}
+              onChange={(event) => setTrip((prev) => ({ ...prev, arrivalCityId: event.target.value }))}
+            >
+              {CITIES.map((city) => (
+                <option key={city.id} value={city.id}>
+                  {city.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="arrival-time" className="text-sm font-medium text-foreground">
+              도착 일시
+            </label>
+            <input
+              id="arrival-time"
+              type="datetime-local"
+              className="h-9 rounded-md border border-input bg-background px-2.5 text-sm"
+              value={trip.arrivalDateTime}
+              onChange={(event) => setTrip((prev) => ({ ...prev, arrivalDateTime: event.target.value }))}
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="departure-city" className="text-sm font-medium text-foreground">
+              출발 도시
+            </label>
+            <select
+              id="departure-city"
+              className="h-9 rounded-md border border-input bg-background px-2.5 text-sm"
+              value={trip.departureCityId}
+              onChange={(event) => setTrip((prev) => ({ ...prev, departureCityId: event.target.value }))}
+            >
+              {CITIES.map((city) => (
+                <option key={city.id} value={city.id}>
+                  {city.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="departure-time" className="text-sm font-medium text-foreground">
+              출발 일시
+            </label>
+            <input
+              id="departure-time"
+              type="datetime-local"
+              className="h-9 rounded-md border border-input bg-background px-2.5 text-sm"
+              value={trip.departureDateTime}
+              onChange={(event) => setTrip((prev) => ({ ...prev, departureDateTime: event.target.value }))}
+            />
+          </div>
+        </div>
+        <Button type="submit" className="w-fit">
+          루트 추천받기
+        </Button>
+      </form>
+
+      {error && (
+        <p role="alert" className="text-sm text-destructive">
+          {error}
+        </p>
+      )}
+
+      {plan && (
+        <section aria-label="추천 루트" className="flex flex-col gap-4 rounded-xl border border-border bg-card p-6">
+          <h2 className="text-lg font-semibold text-foreground">추천 루트</h2>
+          <ol className="flex flex-col gap-2">
+            {plan.cityIds.map((cityId, index) => (
+              <li key={`${cityId}-${index}`} className="flex flex-col gap-1">
+                <span className="font-medium text-foreground">
+                  {index + 1}. {getCity(cityId)?.name ?? cityId}
+                </span>
+                {plan.legs[index] && (
+                  <span className="text-sm text-muted-foreground">
+                    ↓ 기차 약 {formatHours(plan.legs[index].hours)}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ol>
+          <p className="text-sm text-muted-foreground">
+            총 이동 시간: 약 {formatHours(plan.totalHours)}
+          </p>
+        </section>
+      )}
+    </div>
+  );
+}
