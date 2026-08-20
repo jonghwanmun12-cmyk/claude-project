@@ -90,3 +90,32 @@ test("선택할 수 있는 지역은 최대 6곳이다", () => {
     screen.getByText("최대 6곳까지 선택할 수 있어요. 다른 지역을 고르려면 먼저 하나를 해제하세요.")
   ).toBeInTheDocument();
 });
+
+test("구간마다 숙소·이동수단 검색 링크가 나온다", () => {
+  render(<Home />);
+
+  fireEvent.change(screen.getByLabelText("도착 일시"), {
+    target: { value: "2026-09-10T14:00" },
+  });
+  fireEvent.change(screen.getByLabelText("출발 일시"), {
+    target: { value: "2026-09-18T09:00" },
+  });
+
+  // 5개 도시(로마→나폴리→피렌체→밀란→베네치아) 루트의 첫 도시(로마) 숙소 링크.
+  const romeHotelLink = screen.getByRole("link", { name: /9월 10일~9월 12일 숙소 검색/ });
+  expect(romeHotelLink).toHaveAttribute("target", "_blank");
+  const romeHotelUrl = new URL(romeHotelLink.getAttribute("href")!);
+  expect(romeHotelUrl.origin + romeHotelUrl.pathname).toBe(
+    "https://www.booking.com/searchresults.html"
+  );
+  expect(romeHotelUrl.searchParams.get("ss")).toBe("로마");
+  expect(romeHotelUrl.searchParams.get("checkin")).toBe("2026-09-10");
+  expect(romeHotelUrl.searchParams.get("checkout")).toBe("2026-09-12");
+
+  const trainLinks = screen.getAllByRole("link", { name: "Trenitalia에서 열차 검색" });
+  expect(trainLinks.length).toBeGreaterThan(0);
+  trainLinks.forEach((link) => {
+    expect(link).toHaveAttribute("href", "https://www.trenitalia.com");
+    expect(link).toHaveAttribute("target", "_blank");
+  });
+});

@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { buildHotelSearchUrl, TRAIN_BOOKING_HOMEPAGE_URL } from "@/lib/booking-links";
+import { buildItinerary } from "@/lib/itinerary";
 import { CITIES, getCity } from "@/lib/travel-data";
 import { computeNights, computeRoute, MAX_VIA_CITIES, type RoutePlan } from "@/lib/route-planner";
 import { loadTrip, saveTrip, type StoredTrip } from "@/lib/trip-storage";
@@ -26,6 +28,11 @@ function formatHours(hours: number): string {
   }
   if (minutes === 0) return `${wholeHours}시간`;
   return `${wholeHours}시간 ${minutes}분`;
+}
+
+function formatDateKorean(dateOnly: string): string {
+  const [, month, day] = dateOnly.split("-").map(Number);
+  return `${month}월 ${day}일`;
 }
 
 export function TripPlanner() {
@@ -71,6 +78,13 @@ export function TripPlanner() {
       return { plan: null, error: err instanceof Error ? err.message : "루트를 계산할 수 없습니다." };
     }
   }, [trip]);
+
+  // 각 도시에 머무는 날짜 구간(체크인/체크아웃 근사치) — 예약 딥링크에 채울
+  // 날짜가 필요해서 계산한다. plan이 없으면(입력 미완/오류) 빈 배열.
+  const itinerary = useMemo(
+    () => (plan ? buildItinerary(plan, trip.arrivalDateTime, trip.departureDateTime) : []),
+    [plan, trip.arrivalDateTime, trip.departureDateTime]
+  );
 
   // 도착/출발 도시는 경유지 선택 목록에 낼 필요가 없다 — 어차피 루트의
   // 시작/끝으로 고정되어 있고, computeRoute도 이 둘을 제외하고 계산한다.
@@ -216,18 +230,43 @@ export function TripPlanner() {
         <section aria-label="추천 루트" className="flex flex-col gap-4 rounded-xl border border-border bg-card p-6">
           <h2 className="text-lg font-semibold text-foreground">추천 루트</h2>
           <ol className="flex flex-col gap-2">
-            {plan.cityIds.map((cityId, index) => (
-              <li key={`${cityId}-${index}`} className="flex flex-col gap-1">
-                <span className="font-medium text-foreground">
-                  {index + 1}. {getCity(cityId)?.name ?? cityId}
-                </span>
-                {plan.legs[index] && (
-                  <span className="text-sm text-muted-foreground">
-                    ↓ 기차 약 {formatHours(plan.legs[index].hours)}
+            {plan.cityIds.map((cityId, index) => {
+              const cityName = getCity(cityId)?.name ?? cityId;
+              const stay = itinerary[index];
+              const leg = plan.legs[index];
+              return (
+                <li key={`${cityId}-${index}`} className="flex flex-col gap-1">
+                  <span className="font-medium text-foreground">
+                    {index + 1}. {cityName}
                   </span>
-                )}
-              </li>
-            ))}
+                  {stay && (
+                    <a
+                      href={buildHotelSearchUrl(cityName, stay.checkIn, stay.checkOut)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-primary underline underline-offset-2"
+                    >
+                      {formatDateKorean(stay.checkIn)}~{formatDateKorean(stay.checkOut)} 숙소 검색 (Booking.com)
+                    </a>
+                  )}
+                  {leg && stay && (
+                    <span className="flex flex-wrap items-baseline gap-2 text-sm text-muted-foreground">
+                      <span>
+                        ↓ {formatDateKorean(stay.checkOut)}, 기차 약 {formatHours(leg.hours)}
+                      </span>
+                      <a
+                        href={TRAIN_BOOKING_HOMEPAGE_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary underline underline-offset-2"
+                      >
+                        Trenitalia에서 열차 검색
+                      </a>
+                    </span>
+                  )}
+                </li>
+              );
+            })}
           </ol>
           <p className="text-sm text-muted-foreground">
             총 이동 시간: 약 {formatHours(plan.totalHours)}
